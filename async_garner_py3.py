@@ -20,7 +20,7 @@ def get_connect(url):
     ftp.cwd(foldr)                                      # 切入至欲下載檔案位置   
     return ftp
 
-
+# change test
 async def save_file(path, url, semaphore):
     try:
         async with semaphore, aiohttp.request('GET', url) as r:    # request(method, url) http://aiohttp.readthedocs.io/en/stable/client_reference.html
