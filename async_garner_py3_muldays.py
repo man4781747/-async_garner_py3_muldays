@@ -21,10 +21,7 @@ from aiofiles import open as aopen
 
 async def save_file(path, url, semaphore):
     try:
-        skip = 0
-        if os.path.isfile(path):
-            skip = 1
-        if skip == 0:
+        if not os.path.isfile(path):
             async with semaphore, aiohttp.request('GET', url) as r:    # request(method, url) http://aiohttp.readthedocs.io/en/stable/client_reference.html
                 data = await r.read()                                  # 使用 aiohttp.request 來"異步"取得目標檔案的資料
             async with aopen(path, 'wb') as f:
@@ -39,12 +36,9 @@ async def save_file(path, url, semaphore):
 async def main(url, fnamelist, doy_list, year_list):
     concurrent = asyncio.Semaphore(256)                                                             # 最大線程數
     futs = []
-    for year in year_list:
-        for doy in doy_list:
-            for f in fname_list:
-                futs.append(save_file('./rinex/20{1}/{2}/{3}{2}0.{1}d.Z'.format(url,year,'%03d' % doy,f), '{0}{1}/{2}/{3}{2}0.{1}d.Z'.format(url,year,'%03d' % doy, f), concurrent))            
-                            # 下載檔案 (檔案名稱(包含儲存路徑),                                                檔案路徑,                                                       concurrent)
-
+    fmt = "%s{y}/{d:03d}/{f}{d:03d}0.{y}d.Z"
+    items = [fmt.format(y=y, d=d, f=f) for y in year_list for d in doy_list for f in fname_list]
+    futs = [save_file(i % "./rinex/20", i % url, concurrent) for i in items]                         # 下載檔案 (檔案名稱(包含儲存路徑), 檔案路徑, concurrent)
     done, _ = await asyncio.wait(futs)                                                              # 等待跑完所有檔案???? 
                                                                                                     # asyncio.wait(futures, *, loop=None, timeout=None, return_when=ALL_COMPLETED)
                                                                                                     # 返回值 ( done, pending )
@@ -63,10 +57,9 @@ if __name__ == '__main__':
     doy_list = range(1,3)
     fname_list = ['zimm']
 
-    for year in year_list:
-        for doy in doy_list:
-            if os.path.exists('./rinex/20{0}/{1}'.format(year,'%03d' % doy)) == False:
-                    os.makedirs('./rinex/20{0}/{1}'.format(year,'%03d' % doy))
+    fmt = "./rinex/20{0}/{1:03d}"
+    dirs = [fmt.format(y, d) for y in year_list for d in doy_list]
+    [os.makedirs(d) for d in dirs if not os.path.exists(d)]
 
 #    conn = get_connect(url)
 #    files = set(conn.nlst()).difference(os.listdir())          # 產生目標資料夾所有檔案的列表且替除已下載檔案的名稱
@@ -75,4 +68,3 @@ if __name__ == '__main__':
         loop = asyncio.get_event_loop()
         url = r'http://anonymous:jason%40ucsd.edu@' + url
         loop.run_until_complete( main(url, fname_list, doy_list, year_list) )
-        
