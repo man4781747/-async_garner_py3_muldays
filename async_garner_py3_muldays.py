@@ -30,6 +30,7 @@ async def save_file(path, url, semaphore):
         print("get error on", path, "due to", repr(e))             # 報錯
         return path                                                # 報錯後返回失敗的的檔案名稱
     else:
+        subprocess.call('uncompress {0}'.format(path).split())
         print(path, "saved.")                                      # 下載成功
         return None                                                # 下載成功後返回None
 
