@@ -7,7 +7,7 @@ Created on Fri Aug  4 19:02:57 2017
 import os
 #from ftplib import FTP
 import asyncio
-
+import subprocess
 import aiohttp
 from aiofiles import open as aopen
 
@@ -56,7 +56,15 @@ if __name__ == '__main__':
     url = "garner.ucsd.edu/pub/rinex/20"                 # 目標地址
     year_list = ['03']
     doy_list = range(1,3)
-    fname_list = ['zimm']
+    
+    
+#    fname_list = ['zimm']
+    
+    with open('station_list.txt') as fname:
+        fname_list = []
+        rl = fname.readlines()
+        for s in rl:
+            fname_list.append(s[0:4])
 
     fmt = "./rinex/20{0}/{1:03d}"
     dirs = [fmt.format(y, d) for y in year_list for d in doy_list]
